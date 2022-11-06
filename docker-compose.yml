@@ -1,0 +1,41 @@
+version: '2.3'
+services:
+    mlflow_s3:
+        image: minio/minio:latest
+        volumes:
+            - ./s3:/data
+        ports:
+            - ${S3_CONSOLE_PORT}:${S3_CONSOLE_PORT}
+        expose:
+            - ${S3_PORT}
+        environment:
+            - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
+            - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
+        entrypoint: sh
+        command: -c 'mkdir -p /data/${AWS_BUCKET_NAME} && minio server /data --console-address ":${S3_CONSOLE_PORT}"'
+
+    mlflow_db:
+        image: postgres:latest
+        volumes:
+            - ./db:/var/lib/postgresql/data
+        expose:
+            - ${DB_PORT}
+        environment:
+            - POSTGRES_DB=${DB_NAME}
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PW}
+
+    mlflow_service:
+        depends_on:
+            - mlflow_s3
+            - mlflow_db
+        build:
+            context: .
+        ports:
+            - ${MLFLOW_PORT}:${MLFLOW_PORT}
+        environment:
+            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            - MLFLOW_S3_ENDPOINT_URL=http://mlflow_s3:${S3_PORT}
+            - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+            - DB_URL=postgresql://${DB_USER}:${DB_PW}@mlflow_db:${DB_PORT}/${DB_NAME}
