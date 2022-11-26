@@ -1,3 +1,3 @@
-mlflow
+mlflow>=2.*
 boto3
 psycopg2
