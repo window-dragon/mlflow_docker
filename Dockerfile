@@ -11,4 +11,4 @@ RUN apt-get clean && \
 COPY ./requirements.txt ./
 RUN python3 -m pip install -r ./requirements.txt
 
-CMD mlflow server --host 0.0.0.0 --backend-store-uri ${DB_URL} --default-artifact-root s3://${AWS_BUCKET_NAME}
+CMD mlflow server --host 0.0.0.0 --backend-store-uri ${DB_URL} --artifacts-destination s3://${AWS_BUCKET_NAME} --gunicorn-opts "--timeout 600"
